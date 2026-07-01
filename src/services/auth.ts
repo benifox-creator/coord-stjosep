@@ -9,14 +9,21 @@ import { useAuthStore } from '../store/authStore'
 
 const ALLOWED_DOMAIN = 'stjosep.org'
 
-const provider = new GoogleAuthProvider()
-provider.setCustomParameters({ hd: ALLOWED_DOMAIN, prompt: 'select_account' })
-provider.addScope('https://www.googleapis.com/auth/spreadsheets')
-provider.addScope('https://www.googleapis.com/auth/drive.readonly')
-provider.addScope('https://www.googleapis.com/auth/gmail.send')
+const SCOPES = [
+  'https://www.googleapis.com/auth/spreadsheets',
+  'https://www.googleapis.com/auth/drive.readonly',
+  'https://www.googleapis.com/auth/gmail.send',
+]
+
+function createProvider(): GoogleAuthProvider {
+  const p = new GoogleAuthProvider()
+  p.setCustomParameters({ prompt: 'select_account' })
+  SCOPES.forEach((s) => p.addScope(s))
+  return p
+}
 
 export async function loginWithGoogle(): Promise<User> {
-  const result = await signInWithPopup(auth, provider)
+  const result = await signInWithPopup(auth, createProvider())
   const email = result.user.email ?? ''
 
   if (!email.endsWith(`@${ALLOWED_DOMAIN}`)) {

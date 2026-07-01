@@ -9,11 +9,10 @@ export function NoAutoritzatPage() {
   const user = useAuthStore((s) => s.user)
   const accesNegat = useUsuarisStore((s) => s.accesNegat)
 
-  // Tanquem la sessió immediatament en arribar aquí perquè el proper intent
-  // mostri el selector de compte de Google en lloc de reutilitzar la sessió activa.
   useEffect(() => { logout() }, [])
 
-  function handleTornar() {
+  async function handleTornar() {
+    await logout()
     navigate('/login', { replace: true })
   }
 
