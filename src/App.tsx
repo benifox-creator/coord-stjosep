@@ -506,7 +506,6 @@ function MantenimentWrapper() {
         manteniments={manteniments}
         loading={loading}
         error={error}
-        canGestionar={canGestionar}
         onRefresh={refetch}
         onNou={() => setFormObert(true)}
         onVeure={setSeleccionat}

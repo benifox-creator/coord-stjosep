@@ -27,13 +27,12 @@ interface Props {
   manteniments: Manteniment[]
   loading: boolean
   error: string | null
-  canGestionar: boolean
   onRefresh: () => void
   onNou: () => void
   onVeure: (m: Manteniment) => void
 }
 
-export function MantenimentPage({ manteniments, loading, error, canGestionar, onRefresh, onNou, onVeure }: Props) {
+export function MantenimentPage({ manteniments, loading, error, onRefresh, onNou, onVeure }: Props) {
   const [filtreEstat, setFiltreEstat] = useState<EstatManteniment | 'Tots'>('Tots')
   const [filtreCat, setFiltreCat] = useState<CategoriaManteniment | 'Tots'>('Tots')
 
