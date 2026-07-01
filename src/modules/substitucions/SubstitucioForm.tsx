@@ -1,9 +1,8 @@
 import { useState } from 'react'
 import { X, Loader2 } from 'lucide-react'
 import type { SubstitucioFormData, EtapaSubstitucio, TipusSubstitucio } from './types'
-import { ETAPES_SUBSTITUCIO, ETAPA_FRANJA_KEY } from './types'
+import { ETAPES_SUBSTITUCIO } from './types'
 import { formatDateISO } from './substitucions.utils'
-import { useConfigStore } from '../../store/configStore'
 import { useUsuarisStore } from '../../store/usuarisStore'
 
 interface Props {
@@ -17,8 +16,7 @@ const TIPUS: TipusSubstitucio[] = ['Classe', 'Pati']
 export function SubstitucioForm({ dataInicial, onDesar, onCancel }: Props) {
   const avui = formatDateISO(new Date())
   const usuaris = useUsuarisStore((s) => s.usuaris)
-  const getValues = useConfigStore((s) => s.getValues)
-  const grups = getValues('substitucions.grups')
+
 
   const [data, setData] = useState<SubstitucioFormData>({
     Data: dataInicial ?? avui,
@@ -33,8 +31,6 @@ export function SubstitucioForm({ dataInicial, onDesar, onCancel }: Props) {
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-
-  const franges = getValues(ETAPA_FRANJA_KEY[data.Etapa])
 
   function set<K extends keyof SubstitucioFormData>(k: K, v: SubstitucioFormData[K]) {
     setData((prev) => ({ ...prev, [k]: v }))
@@ -128,31 +124,13 @@ export function SubstitucioForm({ dataInicial, onDesar, onCancel }: Props) {
           {/* Franja */}
           <div>
             <label className="block text-xs font-semibold text-gray-500 mb-1">Franja horària *</label>
-            {franges.length > 0 ? (
-              <select
-                value={data.Franja}
-                onChange={(e) => set('Franja', e.target.value)}
-                className="input w-full text-sm"
-              >
-                <option value="">Selecciona una franja...</option>
-                {franges.map((f) => (
-                  <option key={f} value={f}>{f}</option>
-                ))}
-              </select>
-            ) : (
-              <input
-                type="text"
-                value={data.Franja}
-                onChange={(e) => set('Franja', e.target.value)}
-                placeholder="p.ex. 8:00-9:00"
-                className="input w-full text-sm"
-              />
-            )}
-            {franges.length === 0 && (
-              <p className="text-[11px] text-amber-600 mt-1">
-                No hi ha franges configurades per a {data.Etapa}. Escriu-la manualment o configura-les a Configuració.
-              </p>
-            )}
+            <input
+              type="text"
+              value={data.Franja}
+              onChange={(e) => set('Franja', e.target.value)}
+              placeholder="p.ex. 8:00-9:00"
+              className="input w-full text-sm"
+            />
           </div>
 
           {/* Professor absent */}
@@ -192,26 +170,13 @@ export function SubstitucioForm({ dataInicial, onDesar, onCancel }: Props) {
             <>
               <div>
                 <label className="block text-xs font-semibold text-gray-500 mb-1">Grup *</label>
-                {grups.length > 0 ? (
-                  <select
-                    value={data.Grup}
-                    onChange={(e) => set('Grup', e.target.value)}
-                    className="input w-full text-sm"
-                  >
-                    <option value="">Selecciona un grup...</option>
-                    {grups.map((g) => (
-                      <option key={g} value={g}>{g}</option>
-                    ))}
-                  </select>
-                ) : (
-                  <input
-                    type="text"
-                    value={data.Grup}
-                    onChange={(e) => set('Grup', e.target.value)}
-                    placeholder="p.ex. 3r ESO A"
-                    className="input w-full text-sm"
-                  />
-                )}
+                <input
+                  type="text"
+                  value={data.Grup}
+                  onChange={(e) => set('Grup', e.target.value)}
+                  placeholder="p.ex. 3r ESO A"
+                  className="input w-full text-sm"
+                />
               </div>
 
               <div>
