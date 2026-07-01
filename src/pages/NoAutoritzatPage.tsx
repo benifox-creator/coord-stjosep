@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { logout } from '../services/auth'
 import { useAuthStore } from '../store/authStore'
@@ -8,8 +9,11 @@ export function NoAutoritzatPage() {
   const user = useAuthStore((s) => s.user)
   const accesNegat = useUsuarisStore((s) => s.accesNegat)
 
-  async function handleTornar() {
-    await logout()
+  // Tanquem la sessió immediatament en arribar aquí perquè el proper intent
+  // mostri el selector de compte de Google en lloc de reutilitzar la sessió activa.
+  useEffect(() => { logout() }, [])
+
+  function handleTornar() {
     navigate('/login', { replace: true })
   }
 
