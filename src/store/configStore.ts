@@ -65,6 +65,7 @@ export const CONFIG_DEFAULTS: Record<string, string[]> = {
     'Xarxa', 'Equipament', 'Programari', 'Seguretat', 'Formació', 'Infraestructura',
   ],
   'manteniment.email': [],
+  'reserves.espais-colors': [],
   // Visibilitat per defecte: tots els rols veuen tots els mòduls
   'visibilitat.incidencies':  ['direccio', 'professorat', 'convidat'],
   'visibilitat.inventari':    ['direccio', 'professorat', 'convidat'],

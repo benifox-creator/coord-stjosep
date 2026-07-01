@@ -3,6 +3,7 @@ import { Plus, Search, RefreshCw, CalendarDays, Clock, ChevronLeft, ChevronRight
 import type { Reserva, EstatReserva } from './types'
 import { formatDate, formatTime, formatDateISO, isDiaAvui } from './reserves.utils'
 import { useConfigStore } from '../../store/configStore'
+import { useUsuarisStore, potGestionar } from '../../store/usuarisStore'
 
 const AVUI = formatDateISO(new Date())
 const MOCK: Reserva[] = [
@@ -70,58 +71,62 @@ function CalendariMes({ mesDate, avui, reservesByDate, espaiColor, diaSelecciona
   ]
 
   return (
-    <div className="min-w-0">
-      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-center mb-2">
-        {MESOS_CA[month]} {year}
-      </p>
-      <div className="grid grid-cols-7 mb-1">
-        {DIES_CA.map((d) => (
-          <div key={d} className="text-center text-[10px] font-semibold text-gray-400 py-0.5">{d}</div>
-        ))}
+    <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className="px-3 py-2.5 border-b border-gray-100" style={{ background: 'linear-gradient(to right, rgba(134,20,20,0.06), rgba(255,156,2,0.06))' }}>
+        <p className="text-[11px] font-bold text-primary uppercase tracking-widest text-center">
+          {MESOS_CA[month]} {year}
+        </p>
       </div>
-      <div className="grid grid-cols-7 gap-y-0.5">
-        {cells.map((day, idx) => {
-          if (!day) return <div key={idx} />
-          const iso = diaISO(year, month, day)
-          const reserves = reservesByDate[iso] ?? []
-          const actives = reserves.filter((r) => r.Estat !== 'Cancel·lada')
-          const espais  = [...new Set(actives.map((r) => r.Espai))]
-          const isAvui  = iso === avui
-          const isSel   = iso === diaSeleccionat
-          const teRes   = actives.length > 0
+      <div className="px-3 pt-2 pb-3">
+        <div className="grid grid-cols-7 mb-1.5">
+          {DIES_CA.map((d) => (
+            <div key={d} className="text-center text-[10px] font-semibold text-gray-400 py-0.5">{d}</div>
+          ))}
+        </div>
+        <div className="grid grid-cols-7 gap-y-0.5">
+          {cells.map((day, idx) => {
+            if (!day) return <div key={idx} />
+            const iso = diaISO(year, month, day)
+            const reserves = reservesByDate[iso] ?? []
+            const actives = reserves.filter((r) => r.Estat !== 'Cancel·lada')
+            const espais  = [...new Set(actives.map((r) => r.Espai))]
+            const isAvui  = iso === avui
+            const isSel   = iso === diaSeleccionat
+            const teRes   = actives.length > 0
 
-          return (
-            <button
-              key={idx}
-              onClick={() => teRes && onSeleccionarDia(isSel ? '' : iso)}
-              disabled={!teRes}
-              className={`flex flex-col items-center py-0.5 rounded-md transition-colors text-xs ${
-                isSel
-                  ? 'bg-primary text-white'
-                  : isAvui
-                  ? 'ring-1 ring-primary text-primary font-bold'
-                  : teRes
-                  ? 'hover:bg-gray-100 cursor-pointer'
-                  : 'cursor-default'
-              }`}
-            >
-              <span className={`leading-5 font-medium ${isSel ? 'text-white' : isAvui ? 'text-primary' : teRes ? 'text-gray-700' : 'text-gray-300'}`}>
-                {day}
-              </span>
-              {teRes && (
-                <div className="flex gap-0.5 mt-0.5 flex-wrap justify-center">
-                  {espais.slice(0, 4).map((e) => (
-                    <div
-                      key={e}
-                      className="w-1.5 h-1.5 rounded-full"
-                      style={{ backgroundColor: isSel ? 'white' : espaiColor(e) }}
-                    />
-                  ))}
-                </div>
-              )}
-            </button>
-          )
-        })}
+            return (
+              <button
+                key={idx}
+                onClick={() => teRes && onSeleccionarDia(isSel ? '' : iso)}
+                disabled={!teRes}
+                className={`flex flex-col items-center py-0.5 rounded-md transition-colors text-xs ${
+                  isSel
+                    ? 'bg-primary text-white'
+                    : isAvui
+                    ? 'ring-1 ring-primary text-primary font-bold'
+                    : teRes
+                    ? 'hover:bg-gray-100 cursor-pointer'
+                    : 'cursor-default'
+                }`}
+              >
+                <span className={`leading-5 font-medium ${isSel ? 'text-white' : isAvui ? 'text-primary' : teRes ? 'text-gray-700' : 'text-gray-300'}`}>
+                  {day}
+                </span>
+                {teRes && (
+                  <div className="flex gap-0.5 mt-0.5 flex-wrap justify-center">
+                    {espais.slice(0, 4).map((e) => (
+                      <div
+                        key={e}
+                        className="w-1.5 h-1.5 rounded-full"
+                        style={{ backgroundColor: isSel ? 'white' : espaiColor(e) }}
+                      />
+                    ))}
+                  </div>
+                )}
+              </button>
+            )
+          })}
+        </div>
       </div>
     </div>
   )
@@ -137,12 +142,18 @@ interface CalendariProps {
 function CalendariReserves({ reserves, espais, diaSeleccionat, onSeleccionarDia }: CalendariProps) {
   const [offsetMes, setOffsetMes] = useState(0)
   const avui = formatDateISO(new Date())
+  const rol = useUsuarisStore((s) => s.rol)
+  const canGestionar = potGestionar(rol)
+  const colors = useConfigStore((s) => s.getValues('reserves.espais-colors'))
+  const update = useConfigStore((s) => s.update)
 
   const espaiColor = useMemo(() => {
     const map: Record<string, string> = {}
-    espais.forEach((e, i) => { map[e] = ESPAI_PALETTE[i % ESPAI_PALETTE.length] })
+    espais.forEach((e, i) => {
+      map[e] = colors[i] || ESPAI_PALETTE[i % ESPAI_PALETTE.length]
+    })
     return (espai: string) => map[espai] ?? '#6b7280'
-  }, [espais])
+  }, [espais, colors])
 
   const reservesByDate = useMemo(() => {
     const map: Record<string, Reserva[]> = {}
@@ -163,14 +174,20 @@ function CalendariReserves({ reserves, espais, diaSeleccionat, onSeleccionarDia 
     return espais.filter(e => set.has(e))
   }, [reserves, espais])
 
+  function handleColorChange(espaiIdx: number, color: string) {
+    const newColors = espais.map((_, i) => colors[i] || ESPAI_PALETTE[i % ESPAI_PALETTE.length])
+    newColors[espaiIdx] = color
+    update('reserves.espais-colors', newColors)
+  }
+
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-      <div className="flex items-center justify-between mb-3">
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
         <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Calendari de reserves</p>
         <div className="flex items-center gap-1">
           <button
             onClick={() => setOffsetMes((o) => o - 1)}
-            className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+            className="p-1 text-gray-400 hover:text-gray-600 hover:bg-white rounded transition-colors"
           >
             <ChevronLeft size={14} />
           </button>
@@ -184,14 +201,14 @@ function CalendariReserves({ reserves, espais, diaSeleccionat, onSeleccionarDia 
           )}
           <button
             onClick={() => setOffsetMes((o) => o + 1)}
-            className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+            className="p-1 text-gray-400 hover:text-gray-600 hover:bg-white rounded transition-colors"
           >
             <ChevronRight size={14} />
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {mesos.map((m) => (
           <CalendariMes
             key={m.toISOString()}
@@ -206,13 +223,38 @@ function CalendariReserves({ reserves, espais, diaSeleccionat, onSeleccionarDia 
       </div>
 
       {espaisUsats.length > 0 && (
-        <div className="mt-4 pt-3 border-t border-gray-100 flex flex-wrap gap-x-4 gap-y-1.5">
-          {espaisUsats.map((e) => (
-            <div key={e} className="flex items-center gap-1.5">
-              <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: espaiColor(e) }} />
-              <span className="text-xs text-gray-500">{e}</span>
-            </div>
-          ))}
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3">
+          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-2">Espais</p>
+          <div className="flex flex-wrap gap-x-5 gap-y-2">
+            {espaisUsats.map((e) => {
+              const idx = espais.indexOf(e)
+              const color = colors[idx] || ESPAI_PALETTE[idx % ESPAI_PALETTE.length]
+              return (
+                <div key={e} className="flex items-center gap-1.5">
+                  {canGestionar ? (
+                    <label className="cursor-pointer group" title="Fes clic per canviar el color">
+                      <input
+                        type="color"
+                        className="sr-only"
+                        value={color}
+                        onChange={(ev) => handleColorChange(idx, ev.target.value)}
+                      />
+                      <div
+                        className="w-3 h-3 rounded-full shrink-0 ring-1 ring-black/10 group-hover:scale-125 transition-transform"
+                        style={{ backgroundColor: color }}
+                      />
+                    </label>
+                  ) : (
+                    <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                  )}
+                  <span className="text-xs text-gray-600">{e}</span>
+                </div>
+              )
+            })}
+          </div>
+          {canGestionar && (
+            <p className="text-[10px] text-gray-400 mt-2.5">Fes clic als punts de color per personalitzar-los.</p>
+          )}
         </div>
       )}
     </div>
