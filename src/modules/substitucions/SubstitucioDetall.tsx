@@ -4,11 +4,10 @@ import type { Substitucio, EstatSubstitucio } from './types'
 import { formatDate } from './substitucions.utils'
 import { useUsuarisStore } from '../../store/usuarisStore'
 
-const ESTATS: EstatSubstitucio[] = ['Pendent', 'Confirmada', 'Realitzada', 'Cancel·lada']
+const ESTATS: EstatSubstitucio[] = ['Pendent', 'Realitzada', 'Cancel·lada']
 
 const ESTAT_COLORS: Record<EstatSubstitucio, string> = {
   Pendent:      'text-amber-700 bg-amber-100',
-  Confirmada:   'text-blue-600 bg-blue-100',
   Realitzada:   'text-green-700 bg-green-100',
   'Cancel·lada':'text-gray-500 bg-gray-100',
 }

@@ -11,7 +11,7 @@ export const ETAPA_FRANJA_KEY: Record<EtapaSubstitucio, string> = {
 }
 
 export type TipusSubstitucio = 'Classe' | 'Pati'
-export type EstatSubstitucio = 'Pendent' | 'Confirmada' | 'Realitzada' | 'Cancel·lada'
+export type EstatSubstitucio = 'Pendent' | 'Realitzada' | 'Cancel·lada'
 
 export interface Substitucio {
   ID: string

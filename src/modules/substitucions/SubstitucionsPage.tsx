@@ -11,7 +11,6 @@ type Tab = 'setmana' | 'estadistiques'
 
 const ESTAT_COLORS: Record<EstatSubstitucio, string> = {
   Pendent:      'text-amber-700 bg-amber-100 border-amber-200',
-  Confirmada:   'text-blue-600 bg-blue-100 border-blue-200',
   Realitzada:   'text-green-700 bg-green-100 border-green-200',
   'Cancel·lada':'text-gray-500 bg-gray-100 border-gray-200',
 }
@@ -372,10 +371,6 @@ export function SubstitucionsPage({ substitucions, loading, error, onRefresh, on
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-3 rounded bg-purple-50 border border-purple-200" />
               Pati
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded bg-white border border-gray-200" />
-              Classe d'altri
             </div>
           </div>
         </div>
