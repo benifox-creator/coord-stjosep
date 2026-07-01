@@ -49,7 +49,7 @@ export function LoginPage() {
 
             {/* Logo */}
             <img
-              src="/logo-stjosep.png"
+              src={`${import.meta.env.BASE_URL}logo-stjosep.png`}
               alt="Col·legi Sant Josep Obrer"
               className="h-24 w-auto object-contain"
               onError={(e) => {
