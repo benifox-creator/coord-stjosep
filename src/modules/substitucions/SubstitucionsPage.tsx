@@ -4,7 +4,7 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { useAuthStore } from '../../store/authStore'
 import type { Substitucio, EstatSubstitucio } from './types'
 import {
-  formatDateISO, formatDate, formatDiaLlarg, formatWeekRange, getWeekDates,
+  formatDateISO, formatDiaLlarg, formatWeekRange, getWeekDates,
 } from './substitucions.utils'
 import { useUsuarisStore, potGestionar } from '../../store/usuarisStore'
 
@@ -90,7 +90,7 @@ const CHART_COLORS = [
 
 interface ChartEntry { name: string; classes: number; patis: number; color: string }
 
-function GraficDistribucio({ dades, total }: { dades: ChartEntry[]; total: number }) {
+function GraficDistribucio({ dades }: { dades: ChartEntry[] }) {
   if (dades.length === 0) return null
 
   const pieClasses = dades.map((d) => ({ name: d.name, value: d.classes, color: d.color })).filter(d => d.value > 0)
@@ -507,7 +507,6 @@ export function SubstitucionsPage({ substitucions, loading, error, onRefresh, on
                 patis: e.patis,
                 color: CHART_COLORS[i % CHART_COLORS.length],
               }))}
-              total={estadistiques.reduce((s, e) => s + e.classes + e.patis, 0)}
             />
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
               <table className="w-full">
