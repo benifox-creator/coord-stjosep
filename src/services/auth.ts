@@ -10,7 +10,7 @@ import { useAuthStore } from '../store/authStore'
 const ALLOWED_DOMAIN = 'stjosep.org'
 
 const provider = new GoogleAuthProvider()
-provider.setCustomParameters({ hd: ALLOWED_DOMAIN })
+provider.setCustomParameters({ hd: ALLOWED_DOMAIN, prompt: 'select_account' })
 provider.addScope('https://www.googleapis.com/auth/spreadsheets')
 provider.addScope('https://www.googleapis.com/auth/drive.readonly')
 provider.addScope('https://www.googleapis.com/auth/gmail.send')
