@@ -252,14 +252,17 @@ export function SubstitucionsPage({ substitucions, loading, error, onRefresh, on
         return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()
       }
       if (filtreEstadistiques === 'trimestre') {
-        const q = Math.floor(now.getMonth() / 3)
-        const dq = Math.floor(d.getMonth() / 3)
-        return d.getFullYear() === now.getFullYear() && dq === q
+        // 1r trim: set–des | 2n trim: gen–mar | 3r trim: abr–jun
+        const trimestre = (m: number) => m >= 8 ? 1 : m <= 2 ? 2 : m <= 5 ? 3 : 0
+        return trimestre(now.getMonth()) !== 0
+          && trimestre(d.getMonth()) !== 0
+          && trimestre(now.getMonth()) === trimestre(d.getMonth())
       }
-      // curs: set-ago
-      const cursSep = now.getMonth() >= 8 ? now.getFullYear() : now.getFullYear() - 1
-      const dSep = d.getMonth() >= 8 ? d.getFullYear() : d.getFullYear() - 1
-      return dSep === cursSep
+      // curs escolar: setembre–juny (jul/ago queden fora)
+      const cursInici = (m: number, y: number) => m >= 8 ? y : m <= 5 ? y - 1 : -1
+      const cursActual = cursInici(now.getMonth(), now.getFullYear())
+      const cursDat    = cursInici(d.getMonth(), d.getFullYear())
+      return cursDat !== -1 && cursDat === cursActual
     }
 
     const mesActualFn = (iso: string) => {
