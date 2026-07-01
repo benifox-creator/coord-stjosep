@@ -3,8 +3,13 @@ import { ensureSheetHeaders } from '../../services/sheets'
 export const SHEET_MANTENIMENT = 'Manteniment'
 
 export const HEADERS_MANTENIMENT = [
-  'ID', 'Titol', 'Tipus', 'Dispositiu', 'Descripcio', 'Responsable',
-  'Data_prevista', 'Data_realitzat', 'Estat', 'Periodicitat', 'Notes', 'Creat_el',
+  'ID', 'Titol', 'Categoria', 'Localitzacio', 'Descripcio',
+  'Prioritat', 'Estat', 'Reporter', 'Data_report', 'Data_resolucio', 'Notes', 'Creat_el',
+] as const
+
+export const CATEGORIES_MANTENIMENT = [
+  'Persianes/Stores', 'Portes/Finestres', 'Mobiliari',
+  'Electricitat', 'Fontaneria', 'Pintura', 'Altres',
 ] as const
 
 export function ensureHeadersManteniment(): Promise<void> {
@@ -28,9 +33,4 @@ export function formatDate(iso: string): string {
 
 export function formatDateTimeISO(d: Date): string {
   return d.toISOString()
-}
-
-export function isOverdue(dataPrevista: string, estat: string): boolean {
-  if (!dataPrevista || estat === 'Completat' || estat === "Cancel·lat") return false
-  return dataPrevista < new Date().toISOString().slice(0, 10)
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Settings, Plus, X, Loader2, AlertCircle, RotateCcw, Users, ChevronDown, Eye } from 'lucide-react'
+import { Settings, Plus, X, Loader2, AlertCircle, RotateCcw, Users, ChevronDown, Eye, Mail } from 'lucide-react'
 import { useConfigStore, CONFIG_DEFAULTS, MODULS_VISIBILITAT, ROLS_VISIBILITAT, ROL_VIS_LABELS } from '../../store/configStore'
 import { useUsuarisStore } from '../../store/usuarisStore'
 import { useAuthStore } from '../../store/authStore'
@@ -306,6 +306,59 @@ function GestioUsuaris({ emailActual }: { emailActual: string }) {
   )
 }
 
+function MantenimentEmailEditor() {
+  const savedValues = useConfigStore((s) => s.config['manteniment.email'])
+  const update = useConfigStore((s) => s.update)
+  const email = savedValues?.[0] ?? ''
+  const [valor, setValor] = useState(email)
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+
+  async function handleDesar() {
+    if (!valor.trim()) return
+    setSaving(true)
+    try {
+      await update('manteniment.email', [valor.trim()])
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-xl p-4">
+      <div className="flex items-start gap-2 mb-3">
+        <Mail size={14} className="text-gray-400 mt-0.5 shrink-0" />
+        <div>
+          <p className="text-sm font-semibold text-text-main">Correu del responsable de manteniment</p>
+          <p className="text-xs text-gray-400 mt-0.5">
+            Quan es reporti un desperfecte s'enviarà una notificació a aquest correu.
+          </p>
+        </div>
+      </div>
+      <div className="flex gap-2">
+        <input
+          type="email"
+          className="input text-sm flex-1"
+          value={valor}
+          onChange={(e) => { setValor(e.target.value); setSaved(false) }}
+          placeholder="manteniment@stjosep.org"
+          onKeyDown={(e) => e.key === 'Enter' && handleDesar()}
+        />
+        <button
+          onClick={handleDesar}
+          disabled={saving || !valor.trim()}
+          className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-white rounded-lg disabled:opacity-50 transition-opacity hover:opacity-90"
+          style={{ backgroundColor: '#861414' }}
+        >
+          {saving ? <Loader2 size={12} className="animate-spin" /> : saved ? '✓' : 'Desar'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function VisibilitatModuls() {
   const config = useConfigStore((s) => s.config)
   const update = useConfigStore((s) => s.update)
@@ -444,6 +497,16 @@ export function ConfiguracioPage() {
               Activa o desactiva quins mòduls pot veure cada perfil. Les caselles marcades indiquen que el mòdul és visible per aquell perfil.
             </p>
             <VisibilitatModuls />
+          </section>
+        )}
+
+        {esCoordinador && (
+          <section>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-2.5 h-2.5 rounded-full bg-gray-400" />
+              <h2 className="text-sm font-bold text-text-main uppercase tracking-wide">Manteniment</h2>
+            </div>
+            <MantenimentEmailEditor />
           </section>
         )}
 

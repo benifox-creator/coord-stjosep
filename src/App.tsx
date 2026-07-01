@@ -54,6 +54,7 @@ import { MantenimentForm } from './modules/manteniment/MantenimentForm'
 import { MantenimentDetall } from './modules/manteniment/MantenimentDetall'
 import { useManteniment } from './modules/manteniment/useManteniment'
 import type { Manteniment } from './modules/manteniment/types'
+
 import { ConfiguracioPage } from './modules/configuracio/ConfiguracioPage'
 import { useConfigStore, canAccessModul } from './store/configStore'
 import { useUsuarisStore, potGestionar, potEliminar } from './store/usuarisStore'
@@ -487,19 +488,12 @@ function PlaAccioWrapper() {
 }
 
 function MantenimentWrapper() {
-  const { manteniments, loading, error, crear, editar, canviarEstat, eliminar, refetch } = useManteniment()
+  const { manteniments, loading, error, crear, canviarEstat, eliminar, refetch } = useManteniment()
   const rol = useUsuarisStore((s) => s.rol)
   const canGestionar = potGestionar(rol)
 
   const [formObert, setFormObert] = useState(false)
-  const [editant, setEditant] = useState<Manteniment | null>(null)
   const [seleccionat, setSeleccionat] = useState<Manteniment | null>(null)
-
-  function handleEditar() {
-    setEditant(seleccionat)
-    setSeleccionat(null)
-    setFormObert(true)
-  }
 
   async function handleCanviarEstat(m: Manteniment, estat: Parameters<typeof canviarEstat>[1]) {
     await canviarEstat(m, estat)
@@ -514,14 +508,13 @@ function MantenimentWrapper() {
         error={error}
         canGestionar={canGestionar}
         onRefresh={refetch}
-        onNou={() => { setEditant(null); setFormObert(true) }}
+        onNou={() => setFormObert(true)}
         onVeure={setSeleccionat}
       />
       {formObert && (
         <MantenimentForm
-          manteniment={editant}
-          onClose={() => { setFormObert(false); setEditant(null) }}
-          onGuardar={editant ? (data) => editar(editant, data) : crear}
+          onClose={() => setFormObert(false)}
+          onGuardar={crear}
         />
       )}
       {seleccionat && (
@@ -529,7 +522,6 @@ function MantenimentWrapper() {
           manteniment={seleccionat}
           canGestionar={canGestionar}
           onClose={() => setSeleccionat(null)}
-          onEditar={handleEditar}
           onEliminar={async (m) => { await eliminar(m); setSeleccionat(null) }}
           onCanviarEstat={handleCanviarEstat}
         />

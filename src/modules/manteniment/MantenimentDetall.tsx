@@ -1,40 +1,46 @@
 import { useState } from 'react'
-import { X, Calendar, User, Monitor, ChevronDown, CheckCircle, Loader2, Pencil, Trash2, RefreshCw, Tag } from 'lucide-react'
+import { X, MapPin, User, Calendar, ChevronDown, CheckCircle, Loader2, Trash2, Tag } from 'lucide-react'
 import type { Manteniment, EstatManteniment } from './types'
-import { formatDate, isOverdue } from './manteniment.utils'
+import { formatDate } from './manteniment.utils'
 
-const ESTATS: EstatManteniment[] = ['Pendent', 'En curs', 'Completat', 'Cancel·lat']
+const ESTATS: EstatManteniment[] = ['Pendent', 'En gestió', 'Resolt', 'Cancel·lat']
 
 const ESTAT_COLORS: Record<EstatManteniment, string> = {
-  'Pendent':    'text-gray-600 bg-gray-100',
-  'En curs':   'text-blue-600 bg-blue-100',
-  'Completat': 'text-green-700 bg-green-100',
-  'Cancel·lat':'text-amber-600 bg-amber-100',
+  'Pendent':    'text-amber-700 bg-amber-100',
+  'En gestió':  'text-blue-600 bg-blue-100',
+  'Resolt':     'text-green-700 bg-green-100',
+  'Cancel·lat': 'text-gray-500 bg-gray-100',
 }
 
-const TIPUS_COLORS: Record<string, string> = {
-  'Preventiu':    'text-blue-600 bg-blue-50 border border-blue-200',
-  'Correctiu':    'text-red-600 bg-red-50 border border-red-200',
-  'Actualització':'text-purple-600 bg-purple-50 border border-purple-200',
-  'Neteja':       'text-green-600 bg-green-50 border border-green-200',
+const PRIORITAT_COLORS: Record<string, string> = {
+  Urgent: 'text-red-600 bg-red-50 border border-red-200',
+  Normal: 'text-amber-600 bg-amber-50 border border-amber-200',
+  Baixa:  'text-gray-500 bg-gray-50 border border-gray-200',
+}
+
+const CATEGORIA_ICONS: Record<string, string> = {
+  'Persianes/Stores': '🪟',
+  'Portes/Finestres': '🚪',
+  'Mobiliari': '🪑',
+  'Electricitat': '⚡',
+  'Fontaneria': '🔧',
+  'Pintura': '🎨',
+  'Altres': '🔩',
 }
 
 interface Props {
   manteniment: Manteniment
   canGestionar: boolean
   onClose: () => void
-  onEditar: () => void
   onEliminar: (m: Manteniment) => Promise<void>
   onCanviarEstat: (m: Manteniment, estat: EstatManteniment) => Promise<void>
 }
 
-export function MantenimentDetall({ manteniment: m, canGestionar, onClose, onEditar, onEliminar, onCanviarEstat }: Props) {
+export function MantenimentDetall({ manteniment: m, canGestionar, onClose, onEliminar, onCanviarEstat }: Props) {
   const [estatObert, setEstatObert] = useState(false)
   const [saving, setSaving] = useState(false)
   const [confirmEliminar, setConfirmEliminar] = useState(false)
   const [eliminant, setEliminant] = useState(false)
-
-  const vencuda = isOverdue(m.Data_prevista, m.Estat)
 
   async function handleCanviarEstat(estat: EstatManteniment) {
     if (estat === m.Estat) { setEstatObert(false); return }
@@ -66,10 +72,12 @@ export function MantenimentDetall({ manteniment: m, canGestionar, onClose, onEdi
         {/* Header */}
         <div className="flex items-start gap-3 px-5 py-4 border-b border-gray-200 shrink-0">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
               <span className="text-xs font-mono font-semibold text-primary">{m.ID}</span>
-              <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${TIPUS_COLORS[m.Tipus] ?? ''}`}>
-                {m.Tipus}
+              <span className="text-sm">{CATEGORIA_ICONS[m.Categoria] ?? '🔩'}</span>
+              <span className="text-xs text-gray-500">{m.Categoria}</span>
+              <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${PRIORITAT_COLORS[m.Prioritat]}`}>
+                {m.Prioritat}
               </span>
             </div>
             <h2 className="text-sm font-semibold text-text-main leading-snug">{m.Titol}</h2>
@@ -83,113 +91,97 @@ export function MantenimentDetall({ manteniment: m, canGestionar, onClose, onEdi
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
 
           {/* Estat */}
-          <section>
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Estat</p>
-            <div className="relative">
-              <button
-                onClick={() => canGestionar && setEstatObert((o) => !o)}
-                disabled={!canGestionar || saving}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm w-full justify-between border transition-colors ${
-                  canGestionar
-                    ? 'bg-gray-50 border-gray-200 hover:bg-gray-100'
-                    : 'bg-gray-50 border-gray-100 cursor-default'
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  {saving && <Loader2 size={14} className="animate-spin text-gray-400" />}
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${ESTAT_COLORS[m.Estat]}`}>
-                    {m.Estat}
-                  </span>
-                </div>
-                {canGestionar && (
+          {canGestionar ? (
+            <section>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Estat</p>
+              <div className="relative">
+                <button
+                  onClick={() => setEstatObert((o) => !o)}
+                  disabled={saving}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm w-full justify-between border bg-gray-50 border-gray-200 hover:bg-gray-100 transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    {saving && <Loader2 size={14} className="animate-spin text-gray-400" />}
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${ESTAT_COLORS[m.Estat]}`}>
+                      {m.Estat}
+                    </span>
+                  </div>
                   <ChevronDown size={15} className={`text-gray-400 transition-transform ${estatObert ? 'rotate-180' : ''}`} />
+                </button>
+                {estatObert && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 overflow-hidden">
+                    {ESTATS.map((e) => (
+                      <button
+                        key={e}
+                        onClick={() => handleCanviarEstat(e)}
+                        className={`w-full flex items-center gap-2 px-3 py-2.5 text-sm hover:bg-gray-50 transition-colors ${e === m.Estat ? 'bg-gray-50' : ''}`}
+                      >
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${ESTAT_COLORS[e]}`}>{e}</span>
+                        {e === m.Estat && <CheckCircle size={14} className="ml-auto text-gray-400" />}
+                      </button>
+                    ))}
+                  </div>
                 )}
-              </button>
-              {estatObert && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 overflow-hidden">
-                  {ESTATS.map((e) => (
-                    <button
-                      key={e}
-                      onClick={() => handleCanviarEstat(e)}
-                      className={`w-full flex items-center gap-2 px-3 py-2.5 text-sm hover:bg-gray-50 transition-colors ${e === m.Estat ? 'bg-gray-50' : ''}`}
-                    >
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${ESTAT_COLORS[e]}`}>{e}</span>
-                      {e === m.Estat && <CheckCircle size={14} className="ml-auto text-gray-400" />}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </section>
+              </div>
+            </section>
+          ) : (
+            <section>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Estat</p>
+              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${ESTAT_COLORS[m.Estat]}`}>
+                {m.Estat}
+              </span>
+            </section>
+          )}
 
           {/* Informació */}
           <section className="space-y-3">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Informació</p>
 
-            {m.Dispositiu && (
+            {m.Localitzacio && (
               <div className="flex items-start gap-2.5">
-                <Monitor size={14} className="text-gray-400 mt-0.5 shrink-0" />
+                <MapPin size={14} className="text-gray-400 mt-0.5 shrink-0" />
                 <div>
-                  <p className="text-xs text-gray-400">Dispositiu / Àrea</p>
-                  <p className="text-sm text-gray-700">{m.Dispositiu}</p>
+                  <p className="text-xs text-gray-400">Localització</p>
+                  <p className="text-sm text-gray-700">{m.Localitzacio}</p>
                 </div>
               </div>
             )}
 
-            {m.Responsable && (
-              <div className="flex items-start gap-2.5">
-                <User size={14} className="text-gray-400 mt-0.5 shrink-0" />
-                <div>
-                  <p className="text-xs text-gray-400">Responsable</p>
-                  <p className="text-sm text-gray-700">{m.Responsable}</p>
-                </div>
+            <div className="flex items-start gap-2.5">
+              <User size={14} className="text-gray-400 mt-0.5 shrink-0" />
+              <div>
+                <p className="text-xs text-gray-400">Reportat per</p>
+                <p className="text-sm text-gray-700">{m.Reporter || '—'}</p>
               </div>
-            )}
+            </div>
 
-            {m.Periodicitat && m.Periodicitat !== 'Única vegada' && (
-              <div className="flex items-start gap-2.5">
-                <RefreshCw size={14} className="text-gray-400 mt-0.5 shrink-0" />
-                <div>
-                  <p className="text-xs text-gray-400">Periodicitat</p>
-                  <p className="text-sm text-gray-700">{m.Periodicitat}</p>
-                </div>
+            <div className="flex items-start gap-2.5">
+              <Calendar size={14} className="text-gray-400 mt-0.5 shrink-0" />
+              <div>
+                <p className="text-xs text-gray-400">Data del report</p>
+                <p className="text-sm text-gray-700">{formatDate(m.Data_report)}</p>
               </div>
-            )}
+            </div>
 
-            {m.Data_prevista && (
-              <div className="flex items-start gap-2.5">
-                <Calendar size={14} className={`mt-0.5 shrink-0 ${vencuda ? 'text-red-500' : 'text-gray-400'}`} />
-                <div>
-                  <p className="text-xs text-gray-400">Data prevista</p>
-                  <p className={`text-sm font-medium ${vencuda ? 'text-red-500' : 'text-gray-700'}`}>
-                    {formatDate(m.Data_prevista)}{vencuda ? ' — Vençuda' : ''}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {m.Data_realitzat && (
+            {m.Data_resolucio && (
               <div className="flex items-start gap-2.5">
                 <CheckCircle size={14} className="text-green-500 mt-0.5 shrink-0" />
                 <div>
-                  <p className="text-xs text-gray-400">Data realitzat</p>
-                  <p className="text-sm text-gray-700">{formatDate(m.Data_realitzat)}</p>
+                  <p className="text-xs text-gray-400">Data resolució</p>
+                  <p className="text-sm text-gray-700">{formatDate(m.Data_resolucio)}</p>
                 </div>
               </div>
             )}
 
-            {m.Periodicitat === 'Única vegada' && (
-              <div className="flex items-start gap-2.5">
-                <Tag size={14} className="text-gray-400 mt-0.5 shrink-0" />
-                <div>
-                  <p className="text-xs text-gray-400">Periodicitat</p>
-                  <p className="text-sm text-gray-700">{m.Periodicitat}</p>
-                </div>
+            <div className="flex items-start gap-2.5">
+              <Tag size={14} className="text-gray-400 mt-0.5 shrink-0" />
+              <div>
+                <p className="text-xs text-gray-400">Categoria</p>
+                <p className="text-sm text-gray-700">{CATEGORIA_ICONS[m.Categoria]} {m.Categoria}</p>
               </div>
-            )}
+            </div>
           </section>
 
-          {/* Descripció */}
           {m.Descripcio && (
             <section>
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Descripció</p>
@@ -199,7 +191,6 @@ export function MantenimentDetall({ manteniment: m, canGestionar, onClose, onEdi
             </section>
           )}
 
-          {/* Notes */}
           {m.Notes && (
             <section>
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Notes</p>
@@ -212,7 +203,7 @@ export function MantenimentDetall({ manteniment: m, canGestionar, onClose, onEdi
 
         {/* Footer */}
         {canGestionar && (
-          <div className="border-t border-gray-200 px-5 py-3 bg-gray-50 shrink-0 flex items-center justify-between gap-2">
+          <div className="border-t border-gray-200 px-5 py-3 bg-gray-50 shrink-0 flex items-center justify-end gap-2">
             {confirmEliminar ? (
               <div className="flex items-center gap-2">
                 <span className="text-xs text-red-600 font-medium">Eliminar?</span>
@@ -238,13 +229,6 @@ export function MantenimentDetall({ manteniment: m, canGestionar, onClose, onEdi
                 <Trash2 size={13} /> Eliminar
               </button>
             )}
-            <button
-              onClick={onEditar}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white rounded-lg hover:opacity-90 transition-opacity"
-              style={{ backgroundColor: '#861414' }}
-            >
-              <Pencil size={14} /> Editar
-            </button>
           </div>
         )}
       </div>

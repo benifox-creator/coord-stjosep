@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react'
-import { Plus, Search, RefreshCw, CalendarDays, Clock } from 'lucide-react'
+import { Plus, Search, RefreshCw, CalendarDays, Clock, ChevronLeft, ChevronRight } from 'lucide-react'
 import type { Reserva, EstatReserva } from './types'
 import { formatDate, formatTime, formatDateISO, isDiaAvui } from './reserves.utils'
+import { useConfigStore } from '../../store/configStore'
 
 const AVUI = formatDateISO(new Date())
 const MOCK: Reserva[] = [
@@ -33,21 +34,190 @@ const MOCK: Reserva[] = [
     Motiu: 'Sessió de lectura amb 1r ESO',
     Estat: 'Pendent', Creat_el: '2026-06-22 16:00', _rowIndex: 3,
   },
-  {
-    ID: 'RES-005', Espai: 'Laboratori de ciències',
-    Usuari: 'Carla Vidal', Email: 'carla.vidal@stjosep.org',
-    Data: '2026-06-21', Hora_inici: '10:00', Hora_fi: '11:00',
-    Motiu: 'Pràctiques de química',
-    Estat: 'Cancel·lada', Creat_el: '2026-06-18 09:00', _rowIndex: 4,
-  },
-  {
-    ID: 'RES-006', Espai: 'Sala de projecció',
-    Usuari: 'Marc Torrent', Email: 'marc.torrent@stjosep.org',
-    Data: '2026-06-26', Hora_inici: '16:00', Hora_fi: '18:00',
-    Motiu: 'Projecció documental per a l\'alumnat',
-    Estat: 'Confirmada', Creat_el: '2026-06-22 08:30', _rowIndex: 5,
-  },
 ]
+
+const ESPAI_PALETTE = [
+  '#2563eb', '#16a34a', '#dc2626', '#d97706',
+  '#7c3aed', '#0891b2', '#c2410c', '#be185d', '#15803d', '#6d28d9',
+]
+
+const MESOS_CA = ['Gener','Febrer','Març','Abril','Maig','Juny','Juliol','Agost','Setembre','Octubre','Novembre','Desembre']
+const DIES_CA  = ['Dl','Dm','Dc','Dj','Dv','Ds','Dg']
+
+function diaISO(year: number, month: number, day: number): string {
+  return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+}
+
+interface CalendariMesProps {
+  mesDate: Date
+  avui: string
+  reservesByDate: Record<string, Reserva[]>
+  espaiColor: (espai: string) => string
+  diaSeleccionat: string
+  onSeleccionarDia: (iso: string) => void
+}
+
+function CalendariMes({ mesDate, avui, reservesByDate, espaiColor, diaSeleccionat, onSeleccionarDia }: CalendariMesProps) {
+  const year  = mesDate.getFullYear()
+  const month = mesDate.getMonth()
+  const diesDelMes = new Date(year, month + 1, 0).getDate()
+  const primerDia  = new Date(year, month, 1).getDay()
+  const offset     = primerDia === 0 ? 6 : primerDia - 1
+
+  const cells: (number | null)[] = [
+    ...Array(offset).fill(null),
+    ...Array.from({ length: diesDelMes }, (_, i) => i + 1),
+  ]
+
+  return (
+    <div className="min-w-0">
+      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-center mb-2">
+        {MESOS_CA[month]} {year}
+      </p>
+      <div className="grid grid-cols-7 mb-1">
+        {DIES_CA.map((d) => (
+          <div key={d} className="text-center text-[10px] font-semibold text-gray-400 py-0.5">{d}</div>
+        ))}
+      </div>
+      <div className="grid grid-cols-7 gap-y-0.5">
+        {cells.map((day, idx) => {
+          if (!day) return <div key={idx} />
+          const iso = diaISO(year, month, day)
+          const reserves = reservesByDate[iso] ?? []
+          const actives = reserves.filter((r) => r.Estat !== 'Cancel·lada')
+          const espais  = [...new Set(actives.map((r) => r.Espai))]
+          const isAvui  = iso === avui
+          const isSel   = iso === diaSeleccionat
+          const teRes   = actives.length > 0
+
+          return (
+            <button
+              key={idx}
+              onClick={() => teRes && onSeleccionarDia(isSel ? '' : iso)}
+              disabled={!teRes}
+              className={`flex flex-col items-center py-0.5 rounded-md transition-colors text-xs ${
+                isSel
+                  ? 'bg-primary text-white'
+                  : isAvui
+                  ? 'ring-1 ring-primary text-primary font-bold'
+                  : teRes
+                  ? 'hover:bg-gray-100 cursor-pointer'
+                  : 'cursor-default'
+              }`}
+            >
+              <span className={`leading-5 font-medium ${isSel ? 'text-white' : isAvui ? 'text-primary' : teRes ? 'text-gray-700' : 'text-gray-300'}`}>
+                {day}
+              </span>
+              {teRes && (
+                <div className="flex gap-0.5 mt-0.5 flex-wrap justify-center">
+                  {espais.slice(0, 4).map((e) => (
+                    <div
+                      key={e}
+                      className="w-1.5 h-1.5 rounded-full"
+                      style={{ backgroundColor: isSel ? 'white' : espaiColor(e) }}
+                    />
+                  ))}
+                </div>
+              )}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+interface CalendariProps {
+  reserves: Reserva[]
+  espais: string[]
+  diaSeleccionat: string
+  onSeleccionarDia: (iso: string) => void
+}
+
+function CalendariReserves({ reserves, espais, diaSeleccionat, onSeleccionarDia }: CalendariProps) {
+  const [offsetMes, setOffsetMes] = useState(0)
+  const avui = formatDateISO(new Date())
+
+  const espaiColor = useMemo(() => {
+    const map: Record<string, string> = {}
+    espais.forEach((e, i) => { map[e] = ESPAI_PALETTE[i % ESPAI_PALETTE.length] })
+    return (espai: string) => map[espai] ?? '#6b7280'
+  }, [espais])
+
+  const reservesByDate = useMemo(() => {
+    const map: Record<string, Reserva[]> = {}
+    reserves.forEach((r) => {
+      if (!map[r.Data]) map[r.Data] = []
+      map[r.Data].push(r)
+    })
+    return map
+  }, [reserves])
+
+  const mesos = [-1, 0, 1].map((offset) => {
+    const base = new Date()
+    return new Date(base.getFullYear(), base.getMonth() + offset + offsetMes, 1)
+  })
+
+  const espaisUsats = useMemo(() => {
+    const set = new Set(reserves.filter(r => r.Estat !== 'Cancel·lada').map(r => r.Espai))
+    return espais.filter(e => set.has(e))
+  }, [reserves, espais])
+
+  return (
+    <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Calendari de reserves</p>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setOffsetMes((o) => o - 1)}
+            className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+          >
+            <ChevronLeft size={14} />
+          </button>
+          {offsetMes !== 0 && (
+            <button
+              onClick={() => setOffsetMes(0)}
+              className="px-2 py-0.5 text-xs text-primary hover:underline"
+            >
+              Avui
+            </button>
+          )}
+          <button
+            onClick={() => setOffsetMes((o) => o + 1)}
+            className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+          >
+            <ChevronRight size={14} />
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        {mesos.map((m) => (
+          <CalendariMes
+            key={m.toISOString()}
+            mesDate={m}
+            avui={avui}
+            reservesByDate={reservesByDate}
+            espaiColor={espaiColor}
+            diaSeleccionat={diaSeleccionat}
+            onSeleccionarDia={onSeleccionarDia}
+          />
+        ))}
+      </div>
+
+      {espaisUsats.length > 0 && (
+        <div className="mt-4 pt-3 border-t border-gray-100 flex flex-wrap gap-x-4 gap-y-1.5">
+          {espaisUsats.map((e) => (
+            <div key={e} className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: espaiColor(e) }} />
+              <span className="text-xs text-gray-500">{e}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 const ESTATS: Array<EstatReserva | ''> = ['', 'Pendent', 'Confirmada', 'Cancel·lada']
 
@@ -93,6 +263,7 @@ export function ReservesPage({
   error = null,
   onRefresh,
 }: Props) {
+  const espais = useConfigStore((s) => s.getValues('reserves.espais'))
   const [cerca, setCerca] = useState('')
   const [filtreEstat, setFiltreEstat] = useState<EstatReserva | ''>('')
   const [filtreData, setFiltreData] = useState('')
@@ -102,8 +273,7 @@ export function ReservesPage({
     return [...reserves]
       .sort((a, b) => {
         const cmp = a.Data.localeCompare(b.Data)
-        if (cmp !== 0) return cmp
-        return a.Hora_inici.localeCompare(b.Hora_inici)
+        return cmp !== 0 ? cmp : a.Hora_inici.localeCompare(b.Hora_inici)
       })
       .filter((r) => {
         if (filtreEstat && r.Estat !== filtreEstat) return false
@@ -138,11 +308,7 @@ export function ReservesPage({
           </div>
           <div className="flex items-center gap-2">
             {onRefresh && (
-              <button
-                onClick={onRefresh}
-                title="Actualitzar"
-                className="p-2 text-gray-400 hover:text-primary hover:bg-gray-100 rounded-lg transition-colors"
-              >
+              <button onClick={onRefresh} title="Actualitzar" className="p-2 text-gray-400 hover:text-primary hover:bg-gray-100 rounded-lg transition-colors">
                 <RefreshCw size={17} className={loading ? 'animate-spin' : ''} />
               </button>
             )}
@@ -151,8 +317,7 @@ export function ReservesPage({
               className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white rounded-lg shadow-sm transition-opacity hover:opacity-90"
               style={{ backgroundColor: '#861414' }}
             >
-              <Plus size={16} />
-              Nova reserva
+              <Plus size={16} /> Nova reserva
             </button>
           </div>
         </div>
@@ -176,19 +341,16 @@ export function ReservesPage({
           <div className="relative flex-1 min-w-52">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
-              type="text"
-              value={cerca}
+              type="text" value={cerca}
               onChange={(e) => setCerca(e.target.value)}
               placeholder="Cercar per espai, usuari, motiu..."
               className="input pl-8 text-sm w-full"
             />
           </div>
           <input
-            type="date"
-            value={filtreData}
+            type="date" value={filtreData}
             onChange={(e) => setFiltreData(e.target.value)}
-            className="input text-sm w-44"
-            title="Filtrar per data"
+            className="input text-sm w-44" title="Filtrar per data"
           />
           <select
             value={filtreEstat}
@@ -209,15 +371,22 @@ export function ReservesPage({
         </div>
       </div>
 
-      {/* Error */}
       {error && (
-        <div className="mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-          {error}
-        </div>
+        <div className="mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>
       )}
 
+      {/* Calendari */}
+      <div className="px-6 pt-4">
+        <CalendariReserves
+          reserves={reserves}
+          espais={espais}
+          diaSeleccionat={filtreData}
+          onSeleccionarDia={setFiltreData}
+        />
+      </div>
+
       {/* Taula */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto mt-4">
         <table className="w-full min-w-[600px]">
           <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
             <tr>
@@ -236,6 +405,8 @@ export function ReservesPage({
                 <td colSpan={5} className="px-4 py-16 text-center text-gray-400 text-sm">
                   {reserves.length === 0
                     ? 'Encara no hi ha reserves registrades.'
+                    : filtreData
+                    ? 'Cap reserva per al dia seleccionat.'
                     : 'Cap reserva coincideix amb els filtres.'}
                 </td>
               </tr>

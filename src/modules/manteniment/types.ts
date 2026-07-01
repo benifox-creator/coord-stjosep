@@ -1,18 +1,25 @@
-export type EstatManteniment = 'Pendent' | 'En curs' | 'Completat' | 'Cancel·lat'
-export type TipusManteniment = 'Preventiu' | 'Correctiu' | 'Actualització' | 'Neteja'
-export type PerioditatManteniment = 'Única vegada' | 'Mensual' | 'Trimestral' | 'Semestral' | 'Anual'
+export type EstatManteniment = 'Pendent' | 'En gestió' | 'Resolt' | 'Cancel·lat'
+export type CategoriaManteniment =
+  | 'Persianes/Stores'
+  | 'Portes/Finestres'
+  | 'Mobiliari'
+  | 'Electricitat'
+  | 'Fontaneria'
+  | 'Pintura'
+  | 'Altres'
+export type PrioritatManteniment = 'Urgent' | 'Normal' | 'Baixa'
 
 export interface Manteniment {
   ID: string
   Titol: string
-  Tipus: TipusManteniment
-  Dispositiu: string
+  Categoria: CategoriaManteniment
+  Localitzacio: string
   Descripcio: string
-  Responsable: string
-  Data_prevista: string
-  Data_realitzat: string
+  Prioritat: PrioritatManteniment
   Estat: EstatManteniment
-  Periodicitat: PerioditatManteniment
+  Reporter: string
+  Data_report: string
+  Data_resolucio: string
   Notes: string
   Creat_el: string
   _rowIndex: number
@@ -20,13 +27,9 @@ export interface Manteniment {
 
 export interface MantenimentFormData {
   Titol: string
-  Tipus: TipusManteniment
-  Dispositiu: string
+  Categoria: CategoriaManteniment
+  Localitzacio: string
   Descripcio: string
-  Responsable: string
-  Data_prevista: string
-  Data_realitzat: string
-  Estat: EstatManteniment
-  Periodicitat: PerioditatManteniment
+  Prioritat: PrioritatManteniment
   Notes: string
 }
