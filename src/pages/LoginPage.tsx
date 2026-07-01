@@ -20,7 +20,7 @@ export function LoginPage() {
       if (message === 'domini-no-autoritzat') {
         navigate('/no-autoritzat', { replace: true })
       } else {
-        setError('No s\'ha pogut iniciar sessió. Torna-ho a intentar.')
+        setError("No s'ha pogut iniciar sessió. Torna-ho a intentar.")
       }
     } finally {
       setLoading(false)
@@ -28,46 +28,95 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-surface">
-      <div className="bg-white rounded-2xl shadow-lg p-10 w-full max-w-sm flex flex-col items-center gap-6">
-        <div className="flex flex-col items-center gap-2">
+    <div
+      className="flex items-center justify-center min-h-screen px-4"
+      style={{
+        background: 'linear-gradient(135deg, #fdf2f2 0%, #fff8f0 55%, #f5f5f5 100%)',
+      }}
+    >
+      <div className="w-full max-w-sm">
+
+        {/* Card */}
+        <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+
+          {/* Franja gradient superior */}
           <div
-            className="w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl font-bold"
-            style={{ backgroundColor: '#861414' }}
-          >
-            SJ
+            className="h-1.5 w-full"
+            style={{ background: 'linear-gradient(90deg, #861414 0%, #c0392b 40%, #ff9c02 100%)' }}
+          />
+
+          <div className="px-10 pt-9 pb-10 flex flex-col items-center gap-5">
+
+            {/* Logo */}
+            <img
+              src="/logo-stjosep.png"
+              alt="Col·legi Sant Josep Obrer"
+              className="h-24 w-auto object-contain"
+              onError={(e) => {
+                const target = e.currentTarget
+                target.style.display = 'none'
+                const fallback = target.nextElementSibling as HTMLElement | null
+                if (fallback) fallback.style.display = 'flex'
+              }}
+            />
+            {/* Fallback si no hi ha logo */}
+            <div
+              className="hidden w-16 h-16 rounded-full items-center justify-center text-white text-xl font-bold shrink-0"
+              style={{ backgroundColor: '#861414' }}
+            >
+              SJ
+            </div>
+
+            {/* Títols */}
+            <div className="text-center -mt-1">
+              <h1 className="text-lg font-bold text-text-main tracking-tight">
+                Coordinació Digital
+              </h1>
+              <p className="text-xs text-gray-400 mt-1 font-medium uppercase tracking-widest">
+                Plataforma de gestió TIC
+              </p>
+            </div>
+
+            {/* Separador */}
+            <div className="w-full border-t border-gray-100" />
+
+            {/* Avisos */}
+            {user && (
+              <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2.5 text-center w-full">
+                Cal reconnectar per accedir a les dades.
+              </p>
+            )}
+            {error && (
+              <p className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-4 py-2.5 text-center w-full">
+                {error}
+              </p>
+            )}
+
+            {/* Botó Google */}
+            <button
+              onClick={handleLogin}
+              disabled={loading}
+              className="flex items-center gap-3 w-full justify-center bg-white border border-gray-300 rounded-xl px-5 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? (
+                <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <GoogleIcon />
+              )}
+              {loading ? 'Connectant...' : user ? 'Reconnecta amb Google' : 'Accedeix amb Google'}
+            </button>
+
+            {/* Peu */}
+            <p className="text-xs text-gray-400 text-center leading-relaxed">
+              Accés exclusiu per a comptes{' '}
+              <span className="font-medium text-gray-500">@stjosep.org</span>
+            </p>
           </div>
-          <h1 className="text-xl font-semibold text-text-main">Col·legi Sant Josep Obrer</h1>
-          <p className="text-sm text-gray-500">Coordinació Digital</p>
         </div>
 
-        {user && (
-          <p className="text-sm text-amber-600 bg-amber-50 rounded-lg px-4 py-2 text-center">
-            Cal reconnectar per accedir a les dades.
-          </p>
-        )}
-
-        {error && (
-          <p className="text-sm text-red-600 bg-red-50 rounded-lg px-4 py-2 text-center">
-            {error}
-          </p>
-        )}
-
-        <button
-          onClick={handleLogin}
-          disabled={loading}
-          className="flex items-center gap-3 bg-white border border-gray-300 rounded-lg px-5 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full justify-center shadow-sm"
-        >
-          {loading ? (
-            <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
-          ) : (
-            <GoogleIcon />
-          )}
-          {loading ? 'Connectant...' : user ? 'Reconnecta amb Google' : 'Accedeix amb Google'}
-        </button>
-
-        <p className="text-xs text-gray-400 text-center">
-          Accés exclusiu per a comptes @stjosep.org
+        {/* Peu de pàgina */}
+        <p className="text-center text-xs text-gray-400 mt-5">
+          © {new Date().getFullYear()} Col·legi Sant Josep Obrer · Sagrat Cor Educació
         </p>
       </div>
     </div>
