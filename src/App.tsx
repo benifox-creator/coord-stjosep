@@ -35,7 +35,11 @@ import { ReservaForm } from './modules/reserves/ReservaForm'
 import { ReservaDetall } from './modules/reserves/ReservaDetall'
 import { useReserves } from './modules/reserves/useReserves'
 import type { Reserva } from './modules/reserves/types'
-import { PanellsPage } from './modules/panells/PanellsPage'
+import { SubstitucionsPage } from './modules/substitucions/SubstitucionsPage'
+import { SubstitucioForm } from './modules/substitucions/SubstitucioForm'
+import { SubstitucioDetall } from './modules/substitucions/SubstitucioDetall'
+import { useSubstitucions } from './modules/substitucions/useSubstitucions'
+import type { Substitucio } from './modules/substitucions/types'
 import { ConeixementPage } from './modules/coneixement/ConeixementPage'
 import { ConeixementForm } from './modules/coneixement/ConeixementForm'
 import { ConeixementDetall } from './modules/coneixement/ConeixementDetall'
@@ -529,6 +533,55 @@ function MantenimentWrapper() {
   )
 }
 
+function SubstitucionsWrapper() {
+  const { substitucions, loading, error, load, crear, canviarEstat, eliminar } = useSubstitucions()
+  const rol = useUsuarisStore((s) => s.rol)
+  const canGestionar = potGestionar(rol)
+
+  const [formObert, setFormObert] = useState(false)
+  const [dataInicial, setDataInicial] = useState<string | undefined>()
+  const [seleccionada, setSeleccionada] = useState<Substitucio | null>(null)
+
+  async function handleCanviarEstat(s: Substitucio, estat: Parameters<typeof canviarEstat>[1]) {
+    await canviarEstat(s, estat)
+    setSeleccionada((prev) => prev ? { ...prev, Estat: estat } : null)
+  }
+
+  function handleNova(data?: string) {
+    setDataInicial(data)
+    setFormObert(true)
+  }
+
+  return (
+    <>
+      <SubstitucionsPage
+        substitucions={substitucions}
+        loading={loading}
+        error={error}
+        onRefresh={load}
+        onNova={handleNova}
+        onVeure={setSeleccionada}
+      />
+      {formObert && (
+        <SubstitucioForm
+          dataInicial={dataInicial}
+          onDesar={async (data) => { await crear(data); setFormObert(false) }}
+          onCancel={() => setFormObert(false)}
+        />
+      )}
+      {seleccionada && (
+        <SubstitucioDetall
+          substitucio={seleccionada}
+          canGestionar={canGestionar}
+          onClose={() => setSeleccionada(null)}
+          onCanviarEstat={handleCanviarEstat}
+          onEliminar={async (s) => { await eliminar(s); setSeleccionada(null) }}
+        />
+      )}
+    </>
+  )
+}
+
 function VisibilitatGuard({ visKey, children }: { visKey: string; children: ReactNode }) {
   const rol = useUsuarisStore((s) => s.rol)
   const config = useConfigStore((s) => s.config)
@@ -562,7 +615,7 @@ function AppRoutes() {
                 <Route path="/material" element={<VisibilitatGuard visKey="material"><MaterialWrapper /></VisibilitatGuard>} />
                 <Route path="/prestecs" element={<VisibilitatGuard visKey="prestecs"><PrestecsWrapper /></VisibilitatGuard>} />
                 <Route path="/reserves" element={<VisibilitatGuard visKey="reserves"><ReservesWrapper /></VisibilitatGuard>} />
-                <Route path="/panells" element={<VisibilitatGuard visKey="panells"><PanellsPage /></VisibilitatGuard>} />
+                <Route path="/substitucions" element={<VisibilitatGuard visKey="substitucions"><SubstitucionsWrapper /></VisibilitatGuard>} />
                 <Route path="/coneixement" element={<VisibilitatGuard visKey="coneixement"><ConeixementWrapper /></VisibilitatGuard>} />
                 <Route path="/pla-accio" element={<VisibilitatGuard visKey="pla-accio"><PlaAccioWrapper /></VisibilitatGuard>} />
                 <Route path="/manteniment" element={<VisibilitatGuard visKey="manteniment"><MantenimentWrapper /></VisibilitatGuard>} />
