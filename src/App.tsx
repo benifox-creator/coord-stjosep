@@ -538,6 +538,8 @@ function SubstitucionsWrapper() {
   const rol = useUsuarisStore((s) => s.rol)
   const canGestionar = potGestionar(rol)
 
+  useEffect(() => { load() }, [])
+
   const [formObert, setFormObert] = useState(false)
   const [dataInicial, setDataInicial] = useState<string | undefined>()
   const [seleccionada, setSeleccionada] = useState<Substitucio | null>(null)
