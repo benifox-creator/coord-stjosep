@@ -536,9 +536,10 @@ function MantenimentWrapper() {
 function SubstitucionsWrapper() {
   const { substitucions, loading, error, load, crear, canviarEstat, eliminar } = useSubstitucions()
   const rol = useUsuarisStore((s) => s.rol)
+  const loadAll = useUsuarisStore((s) => s.loadAll)
   const canGestionar = potGestionar(rol)
 
-  useEffect(() => { load() }, [])
+  useEffect(() => { load(); loadAll() }, [])
 
   const [formObert, setFormObert] = useState(false)
   const [dataInicial, setDataInicial] = useState<string | undefined>()
