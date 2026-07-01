@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { Plus, RefreshCw, ChevronLeft, ChevronRight, BarChart2, CalendarDays } from 'lucide-react'
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { useAuthStore } from '../../store/authStore'
 import type { Substitucio, EstatSubstitucio } from './types'
 import {
@@ -78,6 +79,102 @@ function SubstitucioCard({
       </div>
       <span className="text-[10px] text-gray-400 mt-1 block">{s.Etapa}</span>
     </button>
+  )
+}
+
+const CHART_COLORS = [
+  '#861414', '#ff9c02', '#2563eb', '#16a34a', '#7c3aed',
+  '#0891b2', '#c2410c', '#be185d', '#15803d', '#6d28d9',
+  '#d97706', '#0284c7',
+]
+
+interface ChartEntry { name: string; classes: number; patis: number; color: string }
+
+function GraficDistribucio({ dades, total }: { dades: ChartEntry[]; total: number }) {
+  if (dades.length === 0) return null
+
+  const pieClasses = dades.map((d) => ({ name: d.name, value: d.classes, color: d.color })).filter(d => d.value > 0)
+  const piePatis   = dades.map((d) => ({ name: d.name, value: d.patis,   color: d.color })).filter(d => d.value > 0)
+
+  const totalClasses = dades.reduce((s, d) => s + d.classes, 0)
+  const totalPatis   = dades.reduce((s, d) => s + d.patis, 0)
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+      {/* Donut classes */}
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-center mb-1">Classes</p>
+        <p className="text-2xl font-bold text-primary text-center mb-2">{totalClasses}</p>
+        <div className="h-48 relative">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={pieClasses}
+                cx="50%"
+                cy="50%"
+                innerRadius="55%"
+                outerRadius="80%"
+                dataKey="value"
+                paddingAngle={2}
+              >
+                {pieClasses.map((entry, i) => (
+                  <Cell key={i} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip
+                formatter={(value, name) => [`${value} classes`, name]}
+                contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e5e7eb' }}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Donut patis */}
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-center mb-1">Patis</p>
+        <p className="text-2xl font-bold text-purple-600 text-center mb-2">{totalPatis}</p>
+        <div className="h-48 relative">
+          {totalPatis === 0 ? (
+            <div className="h-full flex items-center justify-center">
+              <p className="text-sm text-gray-300">Sense patis al període</p>
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={piePatis}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius="55%"
+                  outerRadius="80%"
+                  dataKey="value"
+                  paddingAngle={2}
+                >
+                  {piePatis.map((entry, i) => (
+                    <Cell key={i} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  formatter={(value, name) => [`${value} patis`, name]}
+                  contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e5e7eb' }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </div>
+
+      {/* Llegenda compartida */}
+      <div className="sm:col-span-2 flex flex-wrap gap-x-4 gap-y-1.5 px-1">
+        {dades.map((d) => (
+          <div key={d.name} className="flex items-center gap-1.5">
+            <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
+            <span className="text-xs text-gray-600">{d.name}</span>
+          </div>
+        ))}
+      </div>
+    </div>
   )
 }
 
@@ -402,6 +499,16 @@ export function SubstitucionsPage({ substitucions, loading, error, onRefresh, on
               <p className="text-sm text-gray-400">Sense dades per al període seleccionat.</p>
             </div>
           ) : (
+            <>
+            <GraficDistribucio
+              dades={estadistiques.map((e, i) => ({
+                name: e.nom,
+                classes: e.classes,
+                patis: e.patis,
+                color: CHART_COLORS[i % CHART_COLORS.length],
+              }))}
+              total={estadistiques.reduce((s, e) => s + e.classes + e.patis, 0)}
+            />
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
               <table className="w-full">
                 <thead className="bg-gray-50 border-b border-gray-200">
@@ -429,6 +536,7 @@ export function SubstitucionsPage({ substitucions, loading, error, onRefresh, on
                 </tbody>
               </table>
             </div>
+            </>
           )}
 
           <p className="text-[11px] text-gray-400 mt-3">
