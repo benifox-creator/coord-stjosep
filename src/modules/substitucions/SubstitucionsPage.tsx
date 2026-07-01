@@ -36,7 +36,7 @@ function SubstitucioCard({
   myEmail: string
   onClick: () => void
 }) {
-  const { usuaris } = useUsuarisStore.getState()
+  const usuaris = useUsuarisStore((st) => st.usuaris)
   const nomSubstitut = usuaris.find((u) => u.Email === s.ProfessorSubstitut)?.Nom || s.ProfessorSubstitut
   const nomAbsent = usuaris.find((u) => u.Email === s.ProfessorAbsent)?.Nom || s.ProfessorAbsent
   const isMine = s.ProfessorSubstitut === myEmail
@@ -241,7 +241,7 @@ export function SubstitucionsPage({ substitucions, loading, error, onRefresh, on
   }, [substitucions, weekDates])
 
   // Estadístiques
-  const { usuaris } = useUsuarisStore.getState()
+  const usuaris = useUsuarisStore((s) => s.usuaris)
   const now = new Date()
   const estadistiques = useMemo(() => {
     const validSubst = substitucions.filter((s) => s.Estat !== 'Cancel·lada')
