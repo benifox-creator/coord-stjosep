@@ -68,6 +68,8 @@ function AuthSync() {
   const loadConfig = useConfigStore((s) => s.load)
   const configLoaded = useConfigStore((s) => s.loaded)
   const token = useAuthStore((s) => s.googleAccessToken)
+  const loadAllUsuaris = useUsuarisStore((s) => s.loadAll)
+  const usuarisCarregats = useUsuarisStore((s) => s.usuaris.length > 0)
 
   useEffect(() => {
     return onAuthStateChanged(auth, (firebaseUser) => {
@@ -109,7 +111,8 @@ function AuthSync() {
 
   useEffect(() => {
     if (token && !configLoaded) loadConfig()
-  }, [token, configLoaded, loadConfig])
+    if (token && !usuarisCarregats) loadAllUsuaris()
+  }, [token, configLoaded, loadConfig, usuarisCarregats, loadAllUsuaris])
 
   return null
 }
@@ -536,10 +539,9 @@ function MantenimentWrapper() {
 function SubstitucionsWrapper() {
   const { substitucions, loading, error, load, crear, canviarEstat, eliminar } = useSubstitucions()
   const rol = useUsuarisStore((s) => s.rol)
-  const loadAll = useUsuarisStore((s) => s.loadAll)
   const canGestionar = potGestionar(rol)
 
-  useEffect(() => { load(); loadAll() }, [])
+  useEffect(() => { load() }, [])
 
   const [formObert, setFormObert] = useState(false)
   const [dataInicial, setDataInicial] = useState<string | undefined>()
