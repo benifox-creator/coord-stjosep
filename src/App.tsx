@@ -74,12 +74,15 @@ function AuthSync() {
   useEffect(() => {
     return onAuthStateChanged(auth, (firebaseUser) => {
       if (!firebaseUser) {
-        // Si el token JA és null, és un logout real (clearAuth ja s'ha cridat a logout()).
-        // Si el token existeix, és un null transitori del popup COOP — no esborrem el token
-        // perquè Firebase tornarà a disparar onAuthStateChanged(user) tot seguit.
+        // Si el token JA és null, és un logout real → netegem tot.
+        // Si el token existeix, és un null transitori del popup COOP — no fem res:
+        // Firebase tornarà a disparar onAuthStateChanged(user) tot seguit i no hem
+        // d'interrompre les crides async (loadRol, loadAll) que ja estan en curs.
         const tok = useAuthStore.getState().googleAccessToken
-        if (!tok) useAuthStore.getState().clearAuth()
-        useUsuarisStore.getState().reset()
+        if (!tok) {
+          useAuthStore.getState().clearAuth()
+          useUsuarisStore.getState().reset()
+        }
         return
       }
 
